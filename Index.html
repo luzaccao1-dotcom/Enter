@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Matrix - Secure Login</title>
+    <style>
+        :root {
+            --primary-color: #00ff41;
+            --primary-dim: #003300;
+            --background-dark: #0a0a0a;
+            --card-bg: rgba(20, 20, 20, 0.85);
+            --text-color: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-dark);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-image: radial-gradient(circle, #111 10%, #000 100%);
+        }
+
+        .screen {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        .screen.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* 1. TELA DE INTRO (LOADER) */
+        #intro-screen {
+            text-align: center;
+        }
+
+        .matrix-loader {
+            font-size: 24px;
+            color: var(--primary-color);
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            border-right: 2px solid var(--primary-color);
+            animation: typewriter 2s steps(30) infinite alternate, blink 0.6s infinite;
+            margin-bottom: 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--primary-dim);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            margin: 0 auto;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        /* 2. TELA DE LOGIN */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 255, 65, 0.2);
+            border-radius: 12px;
+            padding: 40px 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            backdrop-filter: blur(8px);
+            text-align: center;
+        }
+
+        .card h2 {
+            margin-bottom: 30px;
+            font-size: 26px;
+            letter-spacing: 2px;
+            color: var(--text-color);
+            text-transform: uppercase;
+        }
+
+        .card h2 span {
+            color: var(--primary-color);
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            outline: none;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* 3. BOTÕES */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            box-shadow: inset 0 0 4px rgba(0, 255, 65, 0.2);
+        }
+
+        .btn:hover {
+            background: var(--primary-color);
+            color: #000;
+            box-shadow: 0 0 15px var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: #ff3333;
+            font-size: 14px;
+            margin-top: -15px;
+            margin-bottom: 15px;
+            display: none;
+            font-weight: 500;
+        }
+
+        /* 4. TELA DA MATRIX (PÓS-LOGIN) */
+        #matrix-screen .card {
+            border-color: var(--primary-color);
+            animation: pulseBorder 2s infinite alternate;
+        }
+
+        #matrix-screen p {
+            margin-bottom: 30px;
+            color: #aaa;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .welcome-user {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        /* Animações */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes typewriter { from { width: 0; } to { width: 100%; } }
+        @keyframes blink { from, to { border-color: transparent; } 50% { border-color: var(--primary-color); } }
+        @keyframes pulseBorder { from { box-shadow: 0 0 10px rgba(0, 255, 65, 0.2); } to { box-shadow: 0 0 25px rgba(0, 255, 65, 0.6); } }
+    </style>
+</head>
+<body>
+
+    <div id="intro-screen" class="screen active">
+        <div class="matrix-loader">Autenticando terminal...</div>
+        <div class="spinner"></div>
+    </div>
+
+    <div id="login-screen" class="screen">
+        <div class="card">
+            <h2>SISTEMA <span>MATRIX</span></h2>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <input type="text" id="username" placeholder="Identificador do Usuário" required autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password" placeholder="Código de Acesso" required>
+                </div>
+                <div id="error-msg" class="error-message">Acesso negado. Credenciais inválidas.</div>
+                <button type="submit" class="btn">Conectar</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="matrix-screen" class="screen">
+        <div class="card">
+            <h2>Acesso <span>Garantido</span></h2>
+            <p>Bem-vindo operador, <span id="user-display" class="welcome-user"></span>. Conexão criptografada estabelecida.</p>
+            <button class="btn" id="matrix-trigger">ENTRAR NA MATRIX</button>
+        </div>
+    </div>
+
+    <script>
+        // Banco de dados local com suporte a 50 usuários
+        const allowedUsers = [
+            { user: "admin", pass: "matrix99" },
+            { user: "neo", pass: "trinity" }
+        ];
+
+        for (let i = 1; i <= 50; i++) {
+            const userNum = String(i).padStart(2, '0'); 
+            allowedUsers.push({
+                user: `user${userNum}`,
+                pass: `mtx2026` 
+            });
+        }
+
+        // Animação de Entrada
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                changeScreen('intro-screen', 'login-screen');
+            }, 2500);
+        });
+
+        function changeScreen(currentId, nextId) {
+            const current = document.getElementById(currentId);
+            const next = document.getElementById(nextId);
+            current.classList.remove('active');
+            setTimeout(() => { next.classList.add('active'); }, 50);
+        }
+
+        // Validação de Login
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const userInput = document.getElementById('username').value.trim().toLowerCase();
+            const passInput = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+
+            const validAccount = allowedUsers.find(account => account.user === userInput && account.pass === passInput);
+
+            if (validAccount) {
+                errorMsg.style.display = 'none';
+                document.getElementById('user-display').textContent = validAccount.user.toUpperCase();
+                changeScreen('login-screen', 'matrix-screen');
+            } else {
+                errorMsg.style.display = 'block';
+                document.getElementById('password').value = '';
+            }
+        }
+
+        // --- SISTEMA DE OCULTAÇÃO DE ENDEREÇO ---
+        // O link original foi convertido para Base64 (aHR0cHM6Ly9sdWVhcnEtdGVjLmdpdGh1Yi5pby90ZXN0aHVibWhhdGhyaXgv)
+        document.getElementById('matrix-trigger').addEventListener('click', function() {
+            const secureToken = "aHR0cHM6Ly9sdWVhcnEtdGVjLmdpdGh1Yi5pby90ZXN0aHVibWhhdGhyaXgv";
+            // Decodifica o link em tempo de execução e redireciona na mesma aba
+            window.location.href = atob(secureToken);
+        });
+    </script>
+</body>
+</html>
